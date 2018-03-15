@@ -41,6 +41,7 @@ export class AjaxDataSource extends RemoteDataSource {
 
   protected interval: number
   protected initialized: boolean = false
+  protected last_timestamp: number
 
   destroy(): void {
     if (this.interval != null)
@@ -89,7 +90,8 @@ export class AjaxDataSource extends RemoteDataSource {
       const data = JSON.parse(xhr.responseText)
       switch (mode) {
         case "replace": {
-          this.data = data
+	  this.data = data
+	  this.last_timestamp = Date.now()
           break
         }
         case "append": {

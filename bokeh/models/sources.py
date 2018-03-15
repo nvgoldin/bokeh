@@ -3,7 +3,9 @@ from __future__ import absolute_import
 import warnings
 
 from ..core.has_props import abstract
-from ..core.properties import Any, Bool, ColumnData, Dict, Enum, Instance, Int, JSON, List, Seq, String
+from ..core.properties import (
+    Any, Bool, ColumnData, Dict, Enum, Instance, Int, JSON, List, Seq,
+    Datetime)
 from ..model import Model
 from ..util.dependencies import import_optional
 from ..util.serialization import convert_datetime_array
@@ -687,3 +689,5 @@ class AjaxDataSource(RemoteSource):
     http_headers = Dict(String, String, help="""
     HTTP headers to set for the Ajax request.
     """)
+
+    to =
