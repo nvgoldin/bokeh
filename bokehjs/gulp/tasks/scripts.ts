@@ -122,7 +122,7 @@ gulp.task("scripts:bundle", ["scripts:compile"], (next: () => void) => {
     paths.coffee.gl.main,
   ]
   const bases = [paths.build_dir.tree, './node_modules']
-  const excludes = ["node_modules/moment/moment.js"]
+  const excludes = [""]
   const sourcemaps = argv.sourcemaps === true
 
   const linker = new Linker({entries, bases, excludes, sourcemaps})

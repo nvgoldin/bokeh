@@ -1,3 +1,4 @@
+import * as moment from "moment"
 import {RemoteDataSource} from "./remote_data_source"
 import {UpdateMode, HTTPMethod} from "core/enums"
 import {logger} from "core/logging"
@@ -11,6 +12,8 @@ export namespace AjaxDataSource {
     max_size: number
     method: HTTPMethod
     if_modified: boolean
+    begin_timestamp: moment.Moment
+    end_timestamp: moment.Moment
   }
 
   export interface Props extends RemoteDataSource.Props {}
@@ -36,12 +39,13 @@ export class AjaxDataSource extends RemoteDataSource {
       max_size:     [ p.Number                     ],
       method:       [ p.String, 'POST'             ], // TODO (bev)  enum?
       if_modified:  [ p.Bool,   false              ],
+      begin_timestamp: [p.Any, moment() ],
+      end_timestamp: [p.Any, moment() ],
     })
   }
 
   protected interval: number
   protected initialized: boolean = false
-  protected last_timestamp: number
 
   destroy(): void {
     if (this.interval != null)
@@ -50,7 +54,11 @@ export class AjaxDataSource extends RemoteDataSource {
   }
 
   setup(): void {
-    if (!this.initialized) {
+  if (!this.initialized) {
+      this.end_timestamp = moment()
+      this.begin_timestamp = moment(this.end_timestamp)
+      this.begin_timestamp.subtract(1, 'hours')
+      console.log("initial set end timestamp: %s, begin timestamp: %s", this.end_timestamp.format(), this.begin_timestamp.format())
       this.initialized = true
       this.get_data(this.mode)
       if (this.polling_interval) {
@@ -91,7 +99,6 @@ export class AjaxDataSource extends RemoteDataSource {
       switch (mode) {
         case "replace": {
 	  this.data = data
-	  this.last_timestamp = Date.now()
           break
         }
         case "append": {
@@ -100,12 +107,17 @@ export class AjaxDataSource extends RemoteDataSource {
             // XXX: support typed arrays
             const old_col = Array.from(original_data[column])
             const new_col = Array.from(data[column])
-            data[column] = old_col.concat(new_col).slice(-max_size)
+	    data[column] = old_col.concat(new_col).slice(-max_size)
+
+	    this.begin_timestamp = moment(this.end_timestamp)
+	    this.end_timestamp.add(this.polling_interval, 'ms')
+	    console.log("polling interval: %s", this.polling_interval)
+            console.log("end timestamp: %s, begin timestamp: %s", this.end_timestamp.format(), this.begin_timestamp.format())
           }
           this.data = data
           break
         }
-      }
+    }
     }
   }
 

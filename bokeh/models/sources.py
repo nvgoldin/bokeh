@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import warnings
 
 from ..core.has_props import abstract
-from ..core.properties import (
+from ..core.properties import (String,
     Any, Bool, ColumnData, Dict, Enum, Instance, Int, JSON, List, Seq,
     Datetime)
 from ..model import Model
@@ -690,4 +690,3 @@ class AjaxDataSource(RemoteSource):
     HTTP headers to set for the Ajax request.
     """)
 
-    to =

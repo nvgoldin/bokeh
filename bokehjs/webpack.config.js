@@ -26,8 +26,8 @@ const config = {
   plugins: [
     new webpack.optimize.CommonsChunkPlugin({
       name: "bokeh",
-    }),
-    new webpack.IgnorePlugin(/moment$/)
+    })
+    //new webpack.IgnorePlugin(/moment$/)
   ]
 };
 

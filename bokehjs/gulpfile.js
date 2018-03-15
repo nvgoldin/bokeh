@@ -33,10 +33,10 @@ function is_up_to_date(file) {
   return old_hash == new_hash
 }
 
-if (!is_up_to_date("package.json")) {
-  console.log("package.json has changed. Run `npm install`.")
-  process.exit(1)
-}
+//if (!is_up_to_date("package.json")) {
+  //console.log("package.json has changed. Run `npm install`.")
+  //process.exit(1)
+//}
 
 require("./ts-node").register({project: "./gulp/tsconfig.json", cache: false});
 require("./gulp");
