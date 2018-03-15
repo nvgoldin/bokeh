@@ -329,6 +329,10 @@ export class Plot extends LayoutDOM {
   }
 
   protected _doc_attached(): void {
+    // XXX: flush possible changes back to server (e.g. toobar, title)
+    const {left, right, above, below, renderers} = this
+    this.setv({left, right, above, below, renderers}, {check_eq: false})
+
     this.plot_canvas.attach_document(this.document!) // XXX!
     super._doc_attached()
   }
