@@ -690,3 +690,7 @@ class AjaxDataSource(RemoteSource):
     HTTP headers to set for the Ajax request.
     """)
 
+    initial_minutes_offset = Int(help="""
+    Initial offset for first plot from current time, in minutes
+    """)
+

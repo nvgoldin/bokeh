@@ -12,8 +12,7 @@ export namespace AjaxDataSource {
     max_size: number
     method: HTTPMethod
     if_modified: boolean
-    begin_timestamp: moment.Moment
-    end_timestamp: moment.Moment
+    initial_minutes_offset: number
   }
 
   export interface Props extends RemoteDataSource.Props {}
@@ -37,15 +36,17 @@ export class AjaxDataSource extends RemoteDataSource {
       content_type: [ p.String, 'application/json' ],
       http_headers: [ p.Any,    {}                 ], // TODO (bev)
       max_size:     [ p.Number                     ],
-      method:       [ p.String, 'POST'             ], // TODO (bev)  enum?
+      method:       [ p.String, 'GET'             ], // TODO (bev)  enum?
       if_modified:  [ p.Bool,   false              ],
-      begin_timestamp: [p.Any, moment() ],
-      end_timestamp: [p.Any, moment() ],
+      initial_minutes_offset: [p.Number, 20],
     })
   }
 
   protected interval: number
   protected initialized: boolean = false
+  protected begin_timestamp: moment.Moment
+  protected end_timestamp: moment.Moment
+
 
   destroy(): void {
     if (this.interval != null)
@@ -57,13 +58,13 @@ export class AjaxDataSource extends RemoteDataSource {
   if (!this.initialized) {
       this.end_timestamp = moment()
       this.begin_timestamp = moment(this.end_timestamp)
-      this.begin_timestamp.subtract(1, 'hours')
+      this.begin_timestamp.subtract(this.initial_minutes_offset, 'minutes')
       console.log("initial set end timestamp: %s, begin timestamp: %s", this.end_timestamp.format(), this.begin_timestamp.format())
       this.initialized = true
-      this.get_data(this.mode)
+      this.get_data(this.mode, this.max_size, this.if_modified) 
       if (this.polling_interval) {
-        const callback = () => this.get_data(this.mode, this.max_size, this.if_modified)
-        this.interval = setInterval(callback, this.polling_interval)
+         const callback = () => this.get_data(this.mode, this.max_size, this.if_modified)
+         this.interval = setInterval(callback, this.polling_interval)
       }
     }
   }
@@ -74,13 +75,13 @@ export class AjaxDataSource extends RemoteDataSource {
     // TODO: if_modified
     xhr.addEventListener("load", () => this.do_load(xhr, mode, max_size))
     xhr.addEventListener("error", () => this.do_error(xhr))
-
     xhr.send()
   }
 
   prepare_request(): XMLHttpRequest {
     const xhr = new XMLHttpRequest()
-    xhr.open(this.method, this.data_url, true)
+    const request_url = encodeURI(this.data_url + "?begin=" + this.begin_timestamp.toISOString() + "&end=" + this.end_timestamp.toISOString())
+    xhr.open(this.method, request_url, true)
     xhr.withCredentials = false
     xhr.setRequestHeader("Content-Type", this.content_type)
 
@@ -91,7 +92,7 @@ export class AjaxDataSource extends RemoteDataSource {
     }
 
     return xhr
-  }
+    }
 
   do_load(xhr: XMLHttpRequest, mode: UpdateMode, max_size: number): void {
     if (xhr.status === 200) {
@@ -109,17 +110,30 @@ export class AjaxDataSource extends RemoteDataSource {
             const new_col = Array.from(data[column])
 	    data[column] = old_col.concat(new_col).slice(-max_size)
 
-	    this.begin_timestamp = moment(this.end_timestamp)
-	    this.end_timestamp.add(this.polling_interval, 'ms')
-	    console.log("polling interval: %s", this.polling_interval)
-            console.log("end timestamp: %s, begin timestamp: %s", this.end_timestamp.format(), this.begin_timestamp.format())
-          }
-          this.data = data
+	    }
+	    this.data = data
+       	    this.shift_timestamp()
           break
         }
     }
     }
   }
+ 
+  shift_timestamp(): void {
+      this.begin_timestamp = moment(this.end_timestamp)
+      this.end_timestamp.add(this.polling_interval, 'ms')
+      }
+
+  set_next_timestamp(begin: moment.Moment, end: moment.Moment): void {
+      this.begin_timestamp = moment(begin)
+      this.end_timestamp = moment(end)
+      }
+  reload(): void {
+      this.get_data("replace", this.max_size, this.if_modified) 
+  }
+
+
+
 
   do_error(xhr: XMLHttpRequest): void {
     logger.error(`Failed to fetch JSON from ${this.data_url} with code ${xhr.status}`)
